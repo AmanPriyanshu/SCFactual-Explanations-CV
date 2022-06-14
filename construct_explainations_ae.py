@@ -5,9 +5,11 @@ from tqdm import tqdm
 from model_classifier import MNISTModel
 from autoencoder import MNIST_AEModel
 from matplotlib import pyplot as plt
+import time
 
 class CFXai:
-	def __init__(self, image, target_y, model_path="./output/model.pt", ae_model_path="./output/ae_model.pt", lr=0.001):
+	def __init__(self, image, target_y, model_path="./output/model.pt", ae_model_path="./output/ae_model.pt", lr=0.001, lamda=3):
+		self.lamda = lamda
 		self.x_dash_img = torch.from_numpy(np.reshape(image, (1, 1, 28, 28))).float()
 		self.x = self.x_dash_img.clone()
 		self.target_y = target_y
@@ -30,6 +32,8 @@ class CFXai:
 			param.requires_grad=False
 
 	def generate_cf_single_iter(self):
+		self.x_dash[self.x_dash>1] = 1
+		self.x_dash[self.x_dash<0] = 0
 		self.x_dash.requires_grad=True
 		x_dash_img = self.ae_model.decoder(self.x_dash)
 		x_dash_img = x_dash_img.view(1, 1, 28, 28)
@@ -37,20 +41,20 @@ class CFXai:
 		pred = torch.argmax(out, dim=1)
 		predicted = pred.item()
 		loss = self.criterion(out, torch.tensor([self.target_y]).to(self.device))
-		#loss = torch.square(1-pred.T[self.target_y][0])
+		loss_og = loss.item()
 		d = torch.mean(torch.abs(x_dash_img - self.x))
-		# if d.item()!=0:
-		# 	d.backward()
+		loss.data = torch.Tensor([d.item()+self.lamda * loss.item()]).to(self.device)[0]
 		loss.backward()
 		self.x_dash = self.x_dash - self.lr*self.x_dash.grad
 		self.x_dash = self.x_dash.detach()
-		return loss.item(), d.item(), predicted==self.target_y
+		return loss_og, d.item(), predicted==self.target_y
 
 	def generate_cf(self, num_iters):
 		bar = tqdm(range(num_iters))
 		for epoch in bar:
 			loss, d, stop = self.generate_cf_single_iter()
 			bar.set_description(str({"epoch": epoch+1, "loss": round(loss, 3), "d": round(d, 3)}))
+			#time.sleep(0.01)
 			# if stop:
 			# 	print("Found Counterfactual at iteration="+str(epoch+1))
 			# 	break
@@ -64,16 +68,22 @@ class CFXai:
 if __name__ == '__main__':
 	df_test = pd.read_csv("./data/mnist_test.csv")
 	df_test = df_test.values
-
-	first_image_xy = df_test[10]
-	first_image_x = first_image_xy[1:]/255
-	first_image_y = first_image_xy[0]
-	print(first_image_y)
-	cfxai = CFXai(first_image_x, target_y=8, lr=0.01)
-	img, og_img, loss, d = cfxai.generate_cf(100)
-	fig, (ax1, ax2) = plt.subplots(1, 2)
-	ax1.imshow(og_img)
-	ax1.set_title("Original Image")
-	ax2.imshow(img)
-	ax2.set_title("Counterfactual")
+	fig, axes = plt.subplots(10, 2, figsize=(5,15))
+	for i in range(10):
+		idx = np.argwhere(df_test.T[0]==i).flatten()
+		np.random.shuffle(idx)
+		first_image_xy = df_test[idx[0]]
+		first_image_x = first_image_xy[1:]/255
+		first_image_y = first_image_xy[0]
+		target_y = int(np.random.choice([j for j in range(10) if j!=i]))
+		cfxai = CFXai(first_image_x, target_y=target_y, lr=0.01)
+		img, og_img, loss, d = cfxai.generate_cf(300)
+		axes[i][0].imshow(og_img)
+		axes[i][0].set_ylabel(str(i))
+		axes[i][1].imshow(img)
+		axes[i][1].set_ylabel(str(cfxai.target_y))
+		axes[i][0].set_xticks([])
+		axes[i][1].set_xticks([])
+		axes[i][0].set_yticks([])
+		axes[i][1].set_yticks([])
 	plt.show()
