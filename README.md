@@ -21,6 +21,10 @@ The results below pose interesting observations, discussing a couple of samples:
 
 ![ae](/images/ae.png)
 
+#### Inferential Results after more training:
+
+![results-ae](/images/AE_Constructions.png)
+
 ## Basic Implementation:
 
 Using simple gradient descent we optimize to find CounterFactuals
