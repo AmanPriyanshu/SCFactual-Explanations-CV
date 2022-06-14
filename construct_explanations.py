@@ -6,7 +6,8 @@ from model_classifier import MNISTModel
 from matplotlib import pyplot as plt
 
 class CFXai:
-	def __init__(self, image, target_y, model_path="./output/model.pt", lr=0.001):
+	def __init__(self, image, target_y, model_path="./output/model.pt", lr=0.001, lamda=3):
+		self.lamda = lamda
 		self.x_dash = torch.from_numpy(np.reshape(image, (1, 1, 28, 28))).float()
 		self.x = self.x_dash.clone()
 		self.target_y = target_y
@@ -28,14 +29,13 @@ class CFXai:
 		out = self.model(self.x_dash)
 		pred = self.prob_layer(out)
 		loss = self.criterion(out, torch.tensor([self.target_y]).to(self.device))
-		#loss = torch.square(1-pred.T[self.target_y][0])
+		loss_og = loss.item()
 		d = torch.mean(torch.abs(self.x_dash - self.x))
-		# if d.item()!=0:
-		# 	d.backward()
+		loss.data = torch.Tensor([d.item()+self.lamda * loss.item()]).to(self.device)[0]
 		loss.backward()
 		self.x_dash = self.x_dash - self.lr*self.x_dash.grad
 		self.x_dash = self.x_dash.detach()
-		return loss.item(), d.item()
+		return loss_og, d.item()
 
 	def generate_cf(self, num_iters):
 		bar = tqdm(range(num_iters))
