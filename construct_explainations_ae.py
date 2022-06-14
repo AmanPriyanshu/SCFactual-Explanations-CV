@@ -77,7 +77,7 @@ if __name__ == '__main__':
 		first_image_y = first_image_xy[0]
 		target_y = int(np.random.choice([j for j in range(10) if j!=i]))
 		cfxai = CFXai(first_image_x, target_y=target_y, lr=0.01)
-		img, og_img, loss, d = cfxai.generate_cf(300)
+		img, og_img, loss, d = cfxai.generate_cf(500)
 		axes[i][0].imshow(og_img)
 		axes[i][0].set_ylabel(str(i))
 		axes[i][1].imshow(img)
@@ -86,4 +86,9 @@ if __name__ == '__main__':
 		axes[i][1].set_xticks([])
 		axes[i][0].set_yticks([])
 		axes[i][1].set_yticks([])
+		if i==0:
+			axes[i][0].set_xlabel('Original')    
+			axes[i][0].xaxis.set_label_position('top') 
+			axes[i][1].set_xlabel('Counterfactual')
+			axes[i][1].xaxis.set_label_position('top')
 	plt.savefig("./images/AE_Constructions.png")
