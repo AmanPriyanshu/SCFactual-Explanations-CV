@@ -1,5 +1,5 @@
 # SCFactual-Explanations-CV
-Creating a pipeline for generating semi-factual and counter-factual explanations for computer vision tasks.
+Creating a pipeline for generating semi-factual and counter-factual explanations for computer vision tasks. A counterfactual explanation describes a causal situation in the form: "If X had not occurred, Y would not have occurred". Basically generating an image close enough to the original one, which results in a target class.
 
 ## AutoEncoder Based Implementation:
 
