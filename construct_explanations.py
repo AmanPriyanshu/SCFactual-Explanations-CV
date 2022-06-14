@@ -62,5 +62,4 @@ if __name__ == '__main__':
 	ax1.set_title("Original Image")
 	ax2.imshow(img)
 	ax2.set_title("Counterfactual")
-	plt.show()
 	plt.savefig("./images/Constructions.png")
