@@ -86,4 +86,4 @@ if __name__ == '__main__':
 		axes[i][1].set_xticks([])
 		axes[i][0].set_yticks([])
 		axes[i][1].set_yticks([])
-	plt.show()
+	plt.savefig("./images/AE_Constructions.png")

@@ -63,3 +63,4 @@ if __name__ == '__main__':
 	ax2.imshow(img)
 	ax2.set_title("Counterfactual")
 	plt.show()
+	plt.savefig("./images/Constructions.png")

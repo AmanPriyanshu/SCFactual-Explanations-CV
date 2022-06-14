@@ -98,5 +98,5 @@ if __name__ == '__main__':
 	ax1.set_title("Original Image")
 	ax2.imshow(image_gen)
 	ax2.set_title("AutoEncoder Generated")
-	plt.show()
+	plt.savefig("./images/ae.png")
 
