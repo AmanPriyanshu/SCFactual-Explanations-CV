@@ -77,7 +77,7 @@ if __name__ == '__main__':
 		first_image_y = first_image_xy[0]
 		target_y = int(np.random.choice([j for j in range(10) if j!=i]))
 		cfxai = CFXai(first_image_x, target_y=target_y, lr=0.01)
-		img, og_img, loss, d = cfxai.generate_cf(500)
+		img, og_img, loss, d = cfxai.generate_cf(3000)
 		axes[i][0].imshow(og_img)
 		axes[i][0].set_ylabel(str(i))
 		axes[i][1].imshow(img)

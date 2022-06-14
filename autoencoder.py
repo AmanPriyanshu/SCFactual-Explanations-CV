@@ -85,7 +85,7 @@ if __name__ == '__main__':
 	df_val = df_val.values
 	cc = ConstructClassifier(df, df_val)
 	if not os.path.exists("./output/ae_model.pt"):
-		model = cc.train(10)
+		model = cc.train(50)
 		torch.save(model, "./output/ae_model.pt")
 	else:
 		model = torch.load("./output/ae_model.pt")
