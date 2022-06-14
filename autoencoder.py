@@ -2,29 +2,31 @@ import pandas as pd
 import numpy as np
 import torch
 from tqdm import tqdm
+import os
+from matplotlib import pyplot as plt
 
 class MNIST_AEModel(torch.nn.Module):
 	def __init__(self):
 		super(MNIST_AEModel, self).__init__()
-		self.enc_linear_1 = torch.nn.Linear(1*28*28, 526)
-		self.enc_linear_2 = torch.nn.Linear(526, 128)
-		self.dec_linear_1 = torch.nn.Linear(128, 526)
-		self.dec_linear_2 = torch.nn.Linear(526, 1*28*28)
-		self.activation = torch.nn.ReLU()
-		self.activation_sigmoid = torch.nn.Sigmoid()
+		self.encoder = torch.nn.Sequential(
+											torch.nn.Linear(1*28*28, 526),
+											torch.nn.ReLU(),
+											torch.nn.Linear(526, 128),
+											torch.nn.Sigmoid(),
+			)
+		self.decoder = torch.nn.Sequential(
+											torch.nn.Linear(128, 526),
+											torch.nn.ReLU(),
+											torch.nn.Linear(526, 1*28*28),
+											torch.nn.Sigmoid()
+			)
 		self.flatten_layer = torch.nn.Flatten()
 
 	def forward(self, x):
 		og_shape = x.shape
 		x = self.flatten_layer(x)
-		x = self.enc_linear_1(x)
-		x = self.activation(x)
-		x = self.enc_linear_2(x)
-		x = self.activation_sigmoid(x)
-		x = self.dec_linear_1(x)
-		x = self.activation(x)
-		x = self.dec_linear_2(x)
-		x = self.activation_sigmoid(x)
+		x = self.encoder(x)
+		x = self.decoder(x)
 		return x.view(og_shape)
 
 class ConstructClassifier:
@@ -37,7 +39,7 @@ class ConstructClassifier:
 		self.model = MNIST_AEModel()
 		self.model.to(self.device)
 		self.criterion = torch.nn.MSELoss()
-		self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+		self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0005)
 
 	def train_single_epoch(self, epoch=0, batch_size=8):
 		bar = tqdm(range(0, len(self.y), batch_size))
@@ -71,11 +73,30 @@ class ConstructClassifier:
 			self.train_single_epoch(epoch)
 		return self.model
 
+	def predict(self, image):
+		self.model.eval()
+		image = torch.from_numpy(np.reshape(image, (1, 1, 28, 28))).float().to(self.device)
+		return self.model(image).cpu().detach().numpy()[0][0]
+
 if __name__ == '__main__':
 	df = pd.read_csv("./data/mnist_train.csv")
 	df = df.values
 	df_val = pd.read_csv("./data/mnist_val.csv")
 	df_val = df_val.values
 	cc = ConstructClassifier(df, df_val)
-	model = cc.train(10)
-	torch.save(model, "./output/ae_model.pt")
+	if not os.path.exists("./output/ae_model.pt"):
+		model = cc.train(10)
+		torch.save(model, "./output/ae_model.pt")
+	else:
+		model = torch.load("./output/ae_model.pt")
+		cc.model = model
+	image = df_val[0][1:]
+	image = np.reshape(image, (28, 28))/255
+	image_gen = cc.predict(image)
+	fig, (ax1, ax2) = plt.subplots(1, 2)
+	ax1.imshow(image)
+	ax1.set_title("Original Image")
+	ax2.imshow(image_gen)
+	ax2.set_title("AutoEncoder Generated")
+	plt.show()
+
